@@ -23,6 +23,7 @@
 #include "control/ControlFrame.h"
 #include "control/CtrlComponents.h"
 #include "interface/IOSDK.h"
+#include <unitree/robot/b2/motion_switcher/motion_switcher_client.hpp>
 
 bool running = true;
 
@@ -64,12 +65,24 @@ int main(int argc, char **argv) {
         check_sub->CloseChannel();
 
         if (conflict) {
-            std::cerr << "\n[ERROR] Another controller is occupying the lowcmd channel!\n"
-                      << "Stop it: sudo systemctl stop unitree-g1-ctrl-autostart\n"
+            std::cerr << "\n[WARN] Another controller is occupying the lowcmd channel, releasing it...\n"
                       << std::endl;
-            return 1;
+
+            // Release the control mode from the other controller
+            unitree::robot::b2::MotionSwitcherClient msc;
+            msc.SetTimeout(5.0f);
+            msc.Init();
+            std::string form, name;
+            while (msc.CheckMode(form, name), !name.empty()) {
+                if (msc.ReleaseMode()) {
+                    std::cerr << "Failed to switch to Release Mode." << std::endl;
+                }
+                sleep(3);
+            }
+            std::cout << "[OK] lowcmd channel released." << std::endl;
+        } else {
+            std::cout << "[OK] lowcmd channel is free." << std::endl;
         }
-        std::cout << "[OK] lowcmd channel is free." << std::endl;
     }
 
     CtrlComponents *ctrlComp = new CtrlComponents(ioInter);
