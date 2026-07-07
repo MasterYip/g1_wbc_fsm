@@ -36,14 +36,23 @@ uint32_t crc32_core(uint32_t *ptr, uint32_t len)
 
 IOSDK::IOSDK()
 {
-    // ChannelFactory::Instance()->Init(0, "eth0"); // eth0 for real robot
-    ChannelFactory::Instance()->Init(1, "lo"); // lo for simulation
+    ChannelFactory::Instance()->Init(0, "eth0"); // eth0 for real robot
+    // ChannelFactory::Instance()->Init(1, "lo"); // lo for simulation
 
     lowcmd_publisher_.reset(new ChannelPublisher<LowCmd_>(HG_CMD_TOPIC));
     lowcmd_publisher_->InitChannel();
 
     lowstate_subscriber_.reset(new ChannelSubscriber<LowState_>(HG_STATE_TOPIC));
     lowstate_subscriber_->InitChannel(std::bind(&IOSDK::LowStateHandler, this, std::placeholders::_1), 1);
+
+    // 切换机器人为外部 AI 控制模式，释放内置控制器
+    {
+        unitree::robot::b2::MotionSwitcherClient msc;
+        msc.SetTimeout(5.0f);
+        msc.Init();
+        int32_t ret = msc.SelectMode("ai");
+        std::cout << "MotionSwitcher SelectMode(ai) = " << ret << std::endl;
+    }
 
     counter_ = 0;
     userCmd_ = UserCommand::NONE;
@@ -119,9 +128,44 @@ void IOSDK::LowStateHandler(const void *message)
     _lowState.imu.accelerometer[1] = low_state.imu_state().accelerometer()[1];
     _lowState.imu.accelerometer[2] = low_state.imu_state().accelerometer()[2];
 
+    // // update gamepad
+    // memcpy(rx_.buff, &low_state.wireless_remote()[0], 40);
+    // gamepad_.update(rx_.RF_RX);
     // update gamepad
+#ifdef USE_LOCAL_JOYSTICK
+    custom_joystick_.poll();
+    {
+        xRockerBtnDataStruct js = {};
+        js.btn.components.R1    = custom_joystick_.button(5);
+        js.btn.components.L1    = custom_joystick_.button(4);
+        js.btn.components.start = custom_joystick_.button(7);
+        js.btn.components.select= custom_joystick_.button(6);
+        // 扳机按键使用轴模拟值判断
+        js.btn.components.R2    = custom_joystick_.axis(4) > 0.5f ? 1 : 0;  // RT
+        js.btn.components.L2    = custom_joystick_.axis(5) > 0.5f ? 1 : 0;  // LT
+        js.btn.components.A     = custom_joystick_.button(0);
+        js.btn.components.B     = custom_joystick_.button(1);
+        js.btn.components.X     = custom_joystick_.button(2);
+        js.btn.components.Y     = custom_joystick_.button(3);
+        int dy = custom_joystick_.dpad_y();
+        int dx = custom_joystick_.dpad_x();
+        js.btn.components.up    = (dy == -1) || custom_joystick_.button(11);
+        js.btn.components.down  = (dy ==  1) || custom_joystick_.button(12);
+        js.btn.components.left  = (dx == -1) || custom_joystick_.button(13);
+        js.btn.components.right = (dx ==  1) || custom_joystick_.button(14);
+        // 摇杆轴
+        js.lx =  custom_joystick_.axis(0);
+        js.ly = -custom_joystick_.axis(1);
+        js.rx =  custom_joystick_.axis(2);   // 右摇杆左右
+        js.ry = -custom_joystick_.axis(3);   // 右摇杆上下
+        js.L2 =  custom_joystick_.axis(5);   // LT 模拟量（0~1）
+        gamepad_.update(js);
+    }
+#else
+    // 官方手柄
     memcpy(rx_.buff, &low_state.wireless_remote()[0], 40);
     gamepad_.update(rx_.RF_RX);
+#endif
 
     // update mode machine
     if (mode_machine_ != low_state.mode_machine())
@@ -131,13 +175,26 @@ void IOSDK::LowStateHandler(const void *message)
         mode_machine_ = low_state.mode_machine();
     }
 
+    // static int debug_cnt = 0;
+    // if(debug_cnt++ % 2000 == 0) {
+    //     std::cout << "BTN: L1=" << gamepad_.L1.pressed
+    //               << " start=" << gamepad_.start.pressed
+    //               << " select=" << gamepad_.select.pressed
+    //               << " R2=" << gamepad_.R2.pressed
+    //               << " L2=" << gamepad_.L2.pressed
+    //               << " A=" << gamepad_.A.pressed
+    //               << " B=" << gamepad_.B.pressed
+    //               << " userCmd=" << (int)userCmd_
+    //               << std::endl;
+    // }
+
     if(gamepad_.start.pressed)
     {
-        userCmd_ = UserCommand::START;          
+        userCmd_ = UserCommand::START;
     }
     if(gamepad_.select.pressed)
     {
-        userCmd_ = UserCommand::SELECT; 
+        userCmd_ = UserCommand::SELECT;
     }
 
     if(gamepad_.R2.pressed)
