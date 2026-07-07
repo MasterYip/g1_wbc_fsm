@@ -10,8 +10,8 @@ find_package(nlohmann_json 3.7.3 REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(unitree_sdk2 REQUIRED)
 
-set(ONNXRUNTIME_ROOT ${PROJECT_SOURCE_DIR}/onnxruntime-linux-x64-1.22.0)
-# set(ONNXRUNTIME_ROOT ${PROJECT_SOURCE_DIR}/onnxruntime-linux-aarch64-1.22.0)
+# set(ONNXRUNTIME_ROOT ${PROJECT_SOURCE_DIR}/onnxruntime-linux-x64-1.22.0)
+set(ONNXRUNTIME_ROOT ${PROJECT_SOURCE_DIR}/onnxruntime-linux-aarch64-1.22.0)
 
 include_directories(
     include
