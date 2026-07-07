@@ -4,6 +4,9 @@
 #include "interface/IOInterface.h"
 #include <string>
 #include "common/gamepad.hpp"
+#ifdef USE_LOCAL_JOYSTICK
+#include "CustomJoystick.h"
+#endif
 #include <unitree/robot/channel/channel_publisher.hpp>
 #include <unitree/robot/channel/channel_subscriber.hpp>
 
@@ -35,6 +38,9 @@ private:
     LowlevelState _lowState;
     REMOTE_DATA_RX rx_;
     Gamepad gamepad_;
+#ifdef USE_LOCAL_JOYSTICK
+    CustomJoystick custom_joystick_;
+#endif
     uint8_t mode_machine_;
     int counter_;
     UserCommand userCmd_;

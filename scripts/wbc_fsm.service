@@ -1,0 +1,26 @@
+[Unit]
+Description=G1 WBC FSM Controller
+After=network.target
+StartLimitIntervalSec=60
+StartLimitBurst=3
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/home/unitree/wbc_fsm
+ExecStart=/home/unitree/wbc_fsm/scripts/wbc_fsm_launch.sh
+
+Restart=always
+RestartSec=5
+
+LimitRTPRIO=99
+LimitMEMLOCK=infinity
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=wbc_fsm
+TimeoutStopSec=5
+KillMode=mixed
+KillSignal=SIGINT
+
+[Install]
+WantedBy=multi-user.target
