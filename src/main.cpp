@@ -24,16 +24,16 @@
 #include "control/CtrlComponents.h"
 #include "interface/IOSDK.h"
 
-bool running = true;  
+bool running = true;
 
 
-void ShutDown(int sig) 
+void ShutDown(int sig)
 {
     std::cout << "stop the controller" << std::endl;
     running = false;
 }
 
-void setProcessScheduler()  // 实时调度设置
+void setProcessScheduler()
 {
     pid_t pid = getpid();
     sched_param param;
@@ -45,14 +45,32 @@ void setProcessScheduler()  // 实时调度设置
 }
 
 int main(int argc, char **argv) {
-    
+
     setProcessScheduler();
     std::cout << std::fixed << std::setprecision(3);
+
     IOInterface *ioInter;
     CtrlPlatform ctrlPlat;
 
     ioInter = new IOSDK();
     ctrlPlat = CtrlPlatform::REALROBOT;
+
+    // --- Check if another controller is occupying lowcmd channel ---
+    {
+        auto check_sub = std::make_shared<ChannelSubscriber<LowCmd_>>(HG_CMD_TOPIC);
+        bool conflict = false;
+        check_sub->InitChannel([&conflict](const void*) { conflict = true; }, 1);
+        usleep(200000);  // wait 200ms to detect publishers
+        check_sub->CloseChannel();
+
+        if (conflict) {
+            std::cerr << "\n[ERROR] Another controller is occupying the lowcmd channel!\n"
+                      << "Stop it: sudo systemctl stop unitree-g1-ctrl-autostart\n"
+                      << std::endl;
+            return 1;
+        }
+        std::cout << "[OK] lowcmd channel is free." << std::endl;
+    }
 
     CtrlComponents *ctrlComp = new CtrlComponents(ioInter);
     ctrlComp->ctrlPlatform = ctrlPlat;
