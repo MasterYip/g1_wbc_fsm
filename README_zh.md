@@ -142,6 +142,26 @@ make -j4
    ./wbc_fsm
    ```
 
+### systemd 服务
+
+如果你使用 `scripts/install_service.sh` 安装了自启动服务，可以用下面的命令检查是否已经卸载：
+
+```bash
+systemctl status wbc_fsm.service
+```
+
+如果服务已经卸载，systemd 通常会提示找不到 unit 文件，或者显示该服务已被停用且未启用。
+
+### 释放 lowcmd 通道
+
+如果控制器因为其他程序占用了 lowcmd 通道而无法启动，可以执行：
+
+```bash
+sudo bash scripts/kill_lowcmd_channel.sh
+```
+
+使用 `--dry-run` 可以先预览将被匹配到的进程，使用 `--force` 可以在发送 SIGTERM 后继续对残留进程发送 SIGKILL。
+
 ## 项目结构
 
 ```

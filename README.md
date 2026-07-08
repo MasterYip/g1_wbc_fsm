@@ -143,6 +143,26 @@ Example configuration (`wbc.json`):
    ./wbc_fsm
    ```
 
+### Systemd Service
+
+If you install the service with `scripts/install_service.sh`, you can verify it has been uninstalled with:
+
+```bash
+systemctl status wbc_fsm.service
+```
+
+If the service is uninstalled, systemd should report that the unit file is not found or the service is inactive and disabled.
+
+### Release Lowcmd Channel
+
+If the controller cannot start because another program is occupying the lowcmd channel, run:
+
+```bash
+sudo bash scripts/kill_lowcmd_channel.sh
+```
+
+Use `--dry-run` to preview the matching processes before killing them, or `--force` to send SIGKILL to any process that survives SIGTERM.
+
 ## Controls
 
 ### Controller Commands
