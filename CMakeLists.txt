@@ -35,6 +35,7 @@ file(GLOB_RECURSE SRC_LIST
 add_executable(wbc_fsm src/main.cpp ${SRC_LIST})
 
 target_compile_definitions(wbc_fsm PRIVATE 
+    USE_LOCAL_JOYSTICK
     PROJECT_ROOT_DIR="${PROJECT_SOURCE_DIR}"
 )
 

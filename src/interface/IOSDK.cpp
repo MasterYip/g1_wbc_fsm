@@ -45,14 +45,14 @@ IOSDK::IOSDK()
     lowstate_subscriber_.reset(new ChannelSubscriber<LowState_>(HG_STATE_TOPIC));
     lowstate_subscriber_->InitChannel(std::bind(&IOSDK::LowStateHandler, this, std::placeholders::_1), 1);
 
-    // 切换机器人为外部 AI 控制模式，释放内置控制器
-    {
-        unitree::robot::b2::MotionSwitcherClient msc;
-        msc.SetTimeout(5.0f);
-        msc.Init();
-        int32_t ret = msc.SelectMode("ai");
-        std::cout << "MotionSwitcher SelectMode(ai) = " << ret << std::endl;
-    }
+    // // 切换机器人为外部 AI 控制模式，释放内置控制器
+    // {
+    //     unitree::robot::b2::MotionSwitcherClient msc;
+    //     msc.SetTimeout(5.0f);
+    //     msc.Init();
+    //     int32_t ret = msc.SelectMode("ai");
+    //     std::cout << "MotionSwitcher SelectMode(ai) = " << ret << std::endl;
+    // }
 
     counter_ = 0;
     userCmd_ = UserCommand::NONE;
